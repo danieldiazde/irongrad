@@ -1,0 +1,32 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        run: uv python install 3.13
+
+      - name: Install dependencies
+        run: uv pip install pybind11 pytest
+
+      - name: Install build tools
+        run: sudo apt-get update && sudo apt-get install -y cmake build-essential
+
+      - name: Build C++ Backend
+        run: |
+          mkdir build
+          cd build
+          cmake .. -Dpybind11_DIR=$(python -m pybind11 --cmakedir)
+          make
+
+      - name: Run Tests
+        run: uv run pytest tests/
