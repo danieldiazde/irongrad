@@ -20,9 +20,12 @@ jobs:
 
       - name: Build C++ Backend
         run: |
+          PYTHON=$(uv run python -c "import sys; print(sys.executable)")
           mkdir build
           cd build
-          cmake .. -Dpybind11_DIR=$(uv run python -m pybind11 --cmakedir)
+          cmake .. \
+            -DPython_EXECUTABLE=$PYTHON \
+            -Dpybind11_DIR=$(uv run python -m pybind11 --cmakedir)
           make
 
       - name: Run Tests
