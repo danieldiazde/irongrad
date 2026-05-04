@@ -1,0 +1,11 @@
+__pychache__/
+*.pyc
+
+build/
+*.so
+*.o
+*.pyd
+
+
+vscode/
+.idea/
