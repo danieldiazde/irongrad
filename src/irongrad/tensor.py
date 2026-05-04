@@ -1,9 +1,20 @@
-import irongrad_backend
+import irongrad_backend as backend
 
 class Tensor:
     
-    def __init__(self, data, _children=()):
-        self.data = [float(x) for x in data]
+    def __init__(self, data, shape = None, _children=()):
+
+
+        self.data = [float(data)] if isinstance(data, (int,float)) else [float(x) for x in data]
+
+        size = 1
+        for dim in shape:
+            size *= dim
+        
+        if size != len(self.data):
+            raise ValueError("Shape and data mismatch")
+
+        self.shape = shape if shape else (len(self.data),)
         self.grad = [0] * len(self.data)
         self._prev = set(_children)
         self._backward = lambda: None
@@ -11,7 +22,10 @@ class Tensor:
 
     def __add__(self, other):
         other = other if isinstance(other, Tensor) else Tensor(other)
-        out_data = irongrad_backend.add_arrays(self.data, other.data)
+
+        self._assert_same_shape(other)
+
+        out_data = backend.add_arrays(self.data, other.data)
         out = Tensor(out_data, _children=(self, other))
 
         def _backward():
@@ -42,7 +56,11 @@ class Tensor:
 
     def __mul__(self, other):
         other = other if isinstance(other, Tensor) else Tensor(other)
-        out_data = irongrad_backend.mul_arrays(self.data, other.data)
+
+        self._assert_same_shape(other)
+
+
+        out_data = backend.mul_arrays(self.data, other.data)
         out = Tensor(out_data, _children=(self, other))
 
         def _backward():
@@ -54,7 +72,7 @@ class Tensor:
         return out
 
     def sum(self):
-        out = Tensor([irongrad_backend.sum_array(self.data)], _children=(self,))
+        out = Tensor([backend.sum_array(self.data)], _children=(self,))
 
         def _backward():
             for i in range(len(self.data)):
@@ -64,7 +82,7 @@ class Tensor:
         return out
 
     def relu(self):
-        out = Tensor(irongrad_backend.relu_array(self.data), _children=(self,))
+        out = Tensor(backend.relu_array(self.data), _children=(self,))
 
         def _backward():
             for i in range(len(self.data)):
@@ -73,9 +91,15 @@ class Tensor:
 
         return out
 
-
-
-
+    @property
+    def size(self):
+        return len(self.data)
+    
+    def _assert_same_shape(self, other):
+        if self.shape != other.shape:
+            raise ValueError(
+                f'Shape Mismatch: {self.shape} VS {other.shape}'
+            )
 
     
     def __repr__(self) -> str:
