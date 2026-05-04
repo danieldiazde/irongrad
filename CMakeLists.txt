@@ -10,3 +10,4 @@ find_package(pybind11 REQUIRED)
 
 
 pybind11_add_module(irongrad_backend src/bindings.cpp)
+target_include_directories(irongrad_backend PRIVATE include)
