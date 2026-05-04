@@ -16,7 +16,7 @@ jobs:
         run: uv python install 3.13
 
       - name: Install dependencies
-        run: uv pip install pybind11 pytest
+        run: uv pip install --system pybind11 pytest
 
       - name: Install build tools
         run: sudo apt-get update && sudo apt-get install -y cmake build-essential
@@ -29,4 +29,4 @@ jobs:
           make
 
       - name: Run Tests
-        run: uv run pytest tests/
+        run: pytest tests/
