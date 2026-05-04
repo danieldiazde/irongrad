@@ -1,30 +1,39 @@
-#include <vector>
-#include <stdexcept>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <vector>
+#include <stdexcept>
 
 namespace py = pybind11;
 
-std::vector<float> add_arrays(const std::vector<float>& a, const std::vector<float>& b) {
-    if (a.size() != b.size()) {
-        throw std::invalid_argument("Two arrays cannot be of different size");
-    }
-
-    size_t size = a.size();
-    std::vector<float> c(size);
-
-    for (size_t i = 0; i < size; ++i) {
-        c[i] = a[i] + b[i];
-    }
-
-    return c;
+std::vector<double> add_arrays(const std::vector<double>& a, const std::vector<double>& b) {
+    if (a.size() != b.size()) throw std::invalid_argument("Size mismatch");
+    std::vector<double> result(a.size());
+    for (size_t i = 0; i < a.size(); ++i) result[i] = a[i] + b[i];
+    return result;
 }
 
+std::vector<double> mul_arrays(const std::vector<double>& a, const std::vector<double>& b) {
+    if (a.size() != b.size()) throw std::invalid_argument("Size mismatch");
+    std::vector<double> result(a.size());
+    for (size_t i = 0; i < a.size(); ++i) result[i] = a[i] * b[i];
+    return result;
+}
 
+double sum_array(const std::vector<double>& a) {
+    double acc = 0.0;
+    for (double x : a) acc += x;
+    return acc;
+}
 
+std::vector<double> relu_array(const std::vector<double>& a) {
+    std::vector<double> result(a.size());
+    for (size_t i = 0; i < a.size(); ++i) result[i] = a[i] > 0.0 ? a[i] : 0.0;
+    return result;
+}
 
 PYBIND11_MODULE(irongrad_backend, m) {
-    m.doc() = "C++ backend for irongrad";
-
-    m.def("add_arrays", &add_arrays, "Adds two arrays element-wise");
+    m.def("add_arrays", &add_arrays);
+    m.def("mul_arrays", &mul_arrays);
+    m.def("sum_array",  &sum_array);
+    m.def("relu_array", &relu_array);
 }
