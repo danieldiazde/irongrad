@@ -1,6 +1,6 @@
 # IronGrad
 
-A custom Autograd engine and Transformer implementation built from scratch in C++ and Python
+A from-scratch deep learning framework implementing a custom autograd engine, optimizer stack, and transformer model in C++ and Python.
 
 ## Motivation
 
@@ -12,3 +12,11 @@ Python Frontend + C++ Backend via PyBind11
 
 ## Build Instructions
 
+Requires `uv` and `cmake`.
+
+```bash
+make build    # compiles the C++ backend into build/
+make test     # runs the full pytest suite
+make clean    # removes build artifacts
+make rebuild  # clean + build
+```

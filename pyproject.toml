@@ -1,7 +1,7 @@
 [project]
 name = "irongrad"
 version = "0.1.0"
-description = "Add your description here"
+description = "A from-scratch autograd engine and neural network framework in C++ and Python."
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
@@ -10,4 +10,4 @@ dependencies = [
 ]
 
 [tool.pytest.ini_options]
-pythonpath = ["build", "src"]
+pythonpath = ["build", "."]
