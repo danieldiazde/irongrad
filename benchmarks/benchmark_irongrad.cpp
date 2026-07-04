@@ -91,12 +91,16 @@ void benchmark_linear_backward(std::size_t batch,
                                std::size_t input_features,
                                std::size_t output_features,
                                int iterations) {
+    Linear layer(input_features, output_features);
+    layer.weights()->set_data(values(input_features * output_features));
+    layer.bias()->set_data(values(output_features));
+    auto input = Tensor::create(Shape(batch, input_features), values(batch * input_features));
+
     double checksum = 0.0;
     const double ms = time_ms([&]() {
-        Linear layer(input_features, output_features);
-        layer.weights()->set_data(values(input_features * output_features));
-        layer.bias()->set_data(values(output_features));
-        auto input = Tensor::create(Shape(batch, input_features), values(batch * input_features));
+        layer.weights()->zero_grad();
+        layer.bias()->zero_grad();
+        input->zero_grad();
 
         auto loss = layer.forward(input)->relu()->sum();
         loss->backward();
