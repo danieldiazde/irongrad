@@ -66,8 +66,8 @@ void benchmark_linear_forward(std::size_t batch,
                               std::size_t output_features,
                               int iterations) {
     Linear layer(input_features, output_features);
-    layer.weights()->data() = values(input_features * output_features);
-    layer.bias()->data() = values(output_features);
+    layer.weights()->set_data(values(input_features * output_features));
+    layer.bias()->set_data(values(output_features));
     auto input = Tensor::create(Shape(batch, input_features), values(batch * input_features));
 
     double checksum = 0.0;
@@ -93,8 +93,8 @@ void benchmark_linear_backward(std::size_t batch,
     double checksum = 0.0;
     const double ms = time_ms([&]() {
         Linear layer(input_features, output_features);
-        layer.weights()->data() = values(input_features * output_features);
-        layer.bias()->data() = values(output_features);
+        layer.weights()->set_data(values(input_features * output_features));
+        layer.bias()->set_data(values(output_features));
         auto input = Tensor::create(Shape(batch, input_features), values(batch * input_features));
 
         auto loss = layer.forward(input)->relu()->sum();
@@ -114,7 +114,7 @@ void benchmark_linear_backward(std::size_t batch,
 
 void benchmark_sgd_step(std::size_t parameters, int iterations) {
     auto weights = Tensor::create(Shape(1, parameters), values(parameters));
-    weights->grad() = values(parameters);
+    weights->set_grad(values(parameters));
     SGD optimizer({weights}, 0.01, 0.9);
 
     const double ms = time_ms([&]() {

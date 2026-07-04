@@ -67,16 +67,32 @@ const std::vector<double>& Tensor::data() const {
     return data_;
 }
 
-std::vector<double>& Tensor::data() {
-    return data_;
-}
-
 const std::vector<double>& Tensor::grad() const {
     return grad_;
 }
 
-std::vector<double>& Tensor::grad() {
+std::vector<double>& Tensor::mutable_data() {
+    return data_;
+}
+
+std::vector<double>& Tensor::mutable_grad() {
     return grad_;
+}
+
+void Tensor::set_data(std::vector<double> data) {
+    if (data.size() != shape_.size()) {
+        throw std::invalid_argument("Data size must match tensor shape");
+    }
+
+    data_ = std::move(data);
+}
+
+void Tensor::set_grad(std::vector<double> grad) {
+    if (grad.size() != shape_.size()) {
+        throw std::invalid_argument("Gradient size must match tensor shape");
+    }
+
+    grad_ = std::move(grad);
 }
 
 void Tensor::zero_grad() {

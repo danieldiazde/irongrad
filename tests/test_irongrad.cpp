@@ -269,7 +269,7 @@ void test_matmul_gradient_check() {
 
 void test_sgd_step() {
     auto weights = tensor({1.0, -2.0});
-    weights->grad() = {0.5, -1.0};
+    weights->set_grad({0.5, -1.0});
 
     SGD optimizer({weights}, 0.1);
     optimizer.step();
@@ -282,9 +282,9 @@ void test_sgd_step() {
 
 void test_linear_layer_autograd() {
     Linear layer(2, 2);
-    layer.weights()->data() = {1.0, 2.0,
-                               3.0, 4.0};
-    layer.bias()->data() = {0.5, -0.5};
+    layer.weights()->set_data({1.0, 2.0,
+                               3.0, 4.0});
+    layer.bias()->set_data({0.5, -0.5});
 
     auto input = tensor(Shape(1, 2), {2.0, 3.0});
     auto output = layer.forward(input);
@@ -309,16 +309,16 @@ void test_linear_layer_gradient_check() {
 
     auto wrt_input = [&](const Tensor::Ptr& input) {
         Linear layer(2, 2);
-        layer.weights()->data() = weight_values;
-        layer.bias()->data() = bias_values;
+        layer.weights()->set_data(weight_values);
+        layer.bias()->set_data(bias_values);
         return layer.forward(input)->sum();
     };
 
     auto linear_loss = [&](const std::vector<double>& weights,
                            const std::vector<double>& bias) {
         Linear layer(2, 2);
-        layer.weights()->data() = weights;
-        layer.bias()->data() = bias;
+        layer.weights()->set_data(weights);
+        layer.bias()->set_data(bias);
         auto input = Tensor::create(input_shape, input_values);
         return scalar_value(layer.forward(input)->sum());
     };
@@ -343,8 +343,8 @@ void test_linear_layer_gradient_check() {
 
     auto analytic_parameter_gradients = [&]() {
         Linear layer(2, 2);
-        layer.weights()->data() = weight_values;
-        layer.bias()->data() = bias_values;
+        layer.weights()->set_data(weight_values);
+        layer.bias()->set_data(bias_values);
         auto input = Tensor::create(input_shape, input_values);
         layer.forward(input)->sum()->backward();
         return std::vector<std::vector<double>>{layer.weights()->grad(), layer.bias()->grad()};
@@ -378,9 +378,9 @@ void test_linear_layer_gradient_check() {
 
 void test_sequential_model() {
     auto first = std::make_unique<Linear>(2, 2);
-    first->weights()->data() = {1.0, -1.0,
-                                0.5, 2.0};
-    first->bias()->data() = {0.0, 0.0};
+    first->weights()->set_data({1.0, -1.0,
+                                0.5, 2.0});
+    first->bias()->set_data({0.0, 0.0});
 
     Sequential model;
     model.add(std::move(first));

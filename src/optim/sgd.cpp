@@ -40,7 +40,7 @@ void SGD::step() {
                 update = nesterov_ ? update + momentum_ * velocity[j] : velocity[j];
             }
 
-            parameter->data()[j] -= learning_rate_ * update;
+            parameter->mutable_data()[j] -= learning_rate_ * update;
         }
     }
 }

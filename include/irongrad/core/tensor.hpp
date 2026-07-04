@@ -28,10 +28,12 @@ public:
     std::size_t index(std::size_t row, std::size_t col) const;
 
     const std::vector<double>& data() const;
-    std::vector<double>& data();
-
     const std::vector<double>& grad() const;
-    std::vector<double>& grad();
+
+    std::vector<double>& mutable_data();
+    std::vector<double>& mutable_grad();
+    void set_data(std::vector<double> data);
+    void set_grad(std::vector<double> grad);
 
     void zero_grad();
     void backward();

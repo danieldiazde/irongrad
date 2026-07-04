@@ -21,17 +21,17 @@ struct Sample {
 class XorModel {
 public:
     XorModel() : hidden_(2, 2), output_(2, 1) {
-        hidden_.weights()->data() = {
+        hidden_.weights()->set_data({
             0.90, 1.10,
             1.05, 0.95,
-        };
-        hidden_.bias()->data() = {0.05, -0.85};
+        });
+        hidden_.bias()->set_data({0.05, -0.85});
 
-        output_.weights()->data() = {
+        output_.weights()->set_data({
             0.80,
             -1.60,
-        };
-        output_.bias()->data() = {0.10};
+        });
+        output_.bias()->set_data({0.10});
     }
 
     Tensor::Ptr forward(const Tensor::Ptr& input) {
