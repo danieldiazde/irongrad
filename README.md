@@ -34,6 +34,8 @@ The C++ test suite validates gradients in two ways:
 
 - Closed-form expectations for known operations
 - Finite-difference checks that compare autograd gradients against numerical derivatives
+- Branching and repeated-use graph cases such as `x*x + x`
+- Repeated backward calls on retained graphs, with leaf-gradient accumulation
 
 This catches incorrect backward rules and gives a baseline before adding lower-level performance optimizations.
 

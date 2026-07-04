@@ -161,6 +161,60 @@ void test_elementwise_gradient_check() {
     );
 }
 
+void test_repeated_tensor_use_in_single_operation() {
+    auto x = tensor({2.0, -3.0});
+
+    x->mul(x)->sum()->backward();
+
+    require_vector_near(x->grad(), {4.0, -6.0}, "x*x repeated-use gradient");
+}
+
+void test_branching_graph_accumulates_paths() {
+    auto x = tensor({2.0, -3.0});
+
+    auto square = x->mul(x);
+    square->add(x)->sum()->backward();
+
+    require_vector_near(x->grad(), {5.0, -5.0}, "x*x + x branching gradient");
+}
+
+void test_branching_graph_gradient_check() {
+    const Shape shape = Shape::vector(3);
+    const std::vector<double> values = {2.0, -3.0, 0.5};
+
+    auto scalar_forward = [](const Tensor::Ptr& x) {
+        return x->mul(x)->add(x)->sum();
+    };
+
+    require_vector_near(
+        analytic_gradient(shape, values, scalar_forward),
+        numerical_gradient(shape, values, scalar_forward),
+        1e-5,
+        "x*x + x finite-difference gradient"
+    );
+}
+
+void test_leaf_gradients_accumulate_across_backward_calls() {
+    auto x = tensor({2.0});
+
+    x->mul(x)->sum()->backward();
+    require_vector_near(x->grad(), {4.0}, "first accumulated gradient");
+
+    x->add(x)->sum()->backward();
+    require_vector_near(x->grad(), {6.0}, "gradient accumulation across losses");
+}
+
+void test_repeated_backward_on_same_graph_accumulates_once_per_call() {
+    auto x = tensor({3.0});
+    auto loss = x->mul(x)->sum();
+
+    loss->backward();
+    require_vector_near(x->grad(), {6.0}, "first backward on retained graph");
+
+    loss->backward();
+    require_vector_near(x->grad(), {12.0}, "second backward on retained graph");
+}
+
 void test_matmul_autograd() {
     auto a = tensor(Shape(2, 3), {1.0, 2.0, 3.0,
                                   4.0, 5.0, 6.0});
@@ -345,6 +399,11 @@ int main() {
     try {
         test_elementwise_autograd();
         test_elementwise_gradient_check();
+        test_repeated_tensor_use_in_single_operation();
+        test_branching_graph_accumulates_paths();
+        test_branching_graph_gradient_check();
+        test_leaf_gradients_accumulate_across_backward_calls();
+        test_repeated_backward_on_same_graph_accumulates_once_per_call();
         test_matmul_autograd();
         test_matmul_gradient_check();
         test_sgd_step();

@@ -240,7 +240,15 @@ void Tensor::backward() {
     std::unordered_set<Tensor*> visited;
     build_topology(shared_from_this(), visited, topology);
 
-    std::fill(grad_.begin(), grad_.end(), 1.0);
+    for (const auto& node : topology) {
+        if (!node->parents_.empty()) {
+            node->zero_grad();
+        }
+    }
+
+    for (double& value : grad_) {
+        value += 1.0;
+    }
 
     for (auto it = topology.rbegin(); it != topology.rend(); ++it) {
         (*it)->backward_fn_();
