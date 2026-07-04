@@ -1,13 +1,26 @@
-cmake_minimum_required(VERSION 3.15)
-project(irongrad)
+cmake_minimum_required(VERSION 3.20)
+project(irongrad LANGUAGES CXX)
 
+add_library(irongrad STATIC
+    src/core/tensor.cpp
+    src/nn/activation.cpp
+    src/nn/linear.cpp
+    src/nn/module.cpp
+    src/nn/sequential.cpp
+    src/optim/optimizer.cpp
+    src/optim/sgd.cpp
+)
 
-set(CMAKE_CXX_STANDARD 20)
+target_compile_features(irongrad PUBLIC cxx_std_20)
+target_include_directories(irongrad PUBLIC include)
 
+option(IRONGRAD_BUILD_TESTS "Build IronGrad tests" ON)
 
-find_package(Python COMPONENTS Interpreter Development REQUIRED)
-find_package(pybind11 REQUIRED)
+if(IRONGRAD_BUILD_TESTS)
+    enable_testing()
 
+    add_executable(irongrad_tests tests/test_irongrad.cpp)
+    target_link_libraries(irongrad_tests PRIVATE irongrad)
 
-pybind11_add_module(irongrad_backend src/bindings.cpp)
-target_include_directories(irongrad_backend PRIVATE include)
+    add_test(NAME irongrad_tests COMMAND irongrad_tests)
+endif()

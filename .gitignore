@@ -1,12 +1,7 @@
-__pycache__/
-*.pyc
-
 build/
-*.so
+*.a
 *.o
-*.pyd
+*.so
 
 .vscode/
 .idea/
-
-.venv/
