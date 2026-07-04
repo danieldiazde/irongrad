@@ -44,6 +44,7 @@ Requires a C++20 compiler.
 ```bash
 make build    # builds the C++ test binary
 make test     # builds and runs the C++ tests
+make sanitize # runs tests with AddressSanitizer and UndefinedBehaviorSanitizer
 make clean    # removes build artifacts
 make rebuild  # clean + build
 ```
@@ -55,3 +56,13 @@ cmake -S . -B build
 cmake --build build
 ctest --test-dir build
 ```
+
+Sanitizers can also be enabled through CMake:
+
+```bash
+cmake -S . -B build-sanitize -DIRONGRAD_ENABLE_SANITIZERS=ON
+cmake --build build-sanitize
+ctest --test-dir build-sanitize --output-on-failure
+```
+
+The sanitizer test disables leak detection with `ASAN_OPTIONS=detect_leaks=0` because LeakSanitizer is not reliable in some containerized environments. Address and undefined-behavior checks still run.

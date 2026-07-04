@@ -17,3 +17,6 @@ jobs:
 
       - name: Run Tests
         run: ctest --test-dir build --output-on-failure
+
+      - name: Run Sanitizers
+        run: make sanitize
