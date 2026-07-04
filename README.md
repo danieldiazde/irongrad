@@ -164,7 +164,3 @@ Benchmark numbers vary by machine, compiler, and current system load. They are i
 - GitHub CI runs tests, sanitizers, XOR, and benchmarks
 - The repository is C++20-only
 - Build artifacts are ignored and removable with `make clean`
-
-## CV Summary
-
-Built IronGrad, a C++20 autograd and neural-network framework from scratch, with tensor operations, reverse-mode autodiff, OOP layers/optimizers, numerical gradient checks, sanitizers, an XOR training demo, CI, and performance benchmarks comparing naive and row-major matrix multiplication.
