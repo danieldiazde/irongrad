@@ -44,18 +44,39 @@ void print_row(const std::string& name, int iterations, double ms) {
               << '\n';
 }
 
-void benchmark_matmul(std::size_t size, int iterations, bool optimized) {
+enum class MatmulKind { Naive, RowMajor, Tiled };
+
+const char* matmul_label(MatmulKind kind) {
+    switch (kind) {
+    case MatmulKind::Naive:    return "matmul naive ";
+    case MatmulKind::RowMajor: return "matmul row-major ";
+    case MatmulKind::Tiled:    return "matmul tiled ";
+    }
+    return "matmul ";
+}
+
+Tensor::Ptr matmul_dispatch(const Tensor::Ptr& lhs, const Tensor::Ptr& rhs, MatmulKind kind) {
+    switch (kind) {
+    case MatmulKind::Naive:    return lhs->matmul_naive(rhs);
+    case MatmulKind::RowMajor: return lhs->matmul(rhs);
+    case MatmulKind::Tiled:    return lhs->matmul_tiled(rhs);
+    }
+    return lhs->matmul(rhs);
+}
+
+void benchmark_matmul(std::size_t size, int iterations, MatmulKind kind) {
     auto lhs = Tensor::create(Shape(size, size), values(size * size));
     auto rhs = Tensor::create(Shape(size, size), values(size * size));
 
     double checksum = 0.0;
     const double ms = time_ms([&]() {
-        auto out = optimized ? lhs->matmul(rhs) : lhs->matmul_naive(rhs);
+        auto out = matmul_dispatch(lhs, rhs, kind);
         checksum += out->data()[0];
     }, iterations);
 
-    const std::string label = optimized ? "matmul row-major " : "matmul naive ";
-    print_row(label + std::to_string(size) + "x" + std::to_string(size), iterations, ms);
+    print_row(std::string(matmul_label(kind)) + std::to_string(size) + "x" + std::to_string(size),
+              iterations,
+              ms);
 
     if (checksum == -1.0) {
         std::cerr << "unreachable checksum guard\n";
@@ -139,12 +160,18 @@ int main() {
               << '\n';
     std::cout << std::string(60, '-') << '\n';
 
-    benchmark_matmul(32, 100, false);
-    benchmark_matmul(32, 100, true);
-    benchmark_matmul(64, 30, false);
-    benchmark_matmul(64, 30, true);
-    benchmark_matmul(128, 8, false);
-    benchmark_matmul(128, 8, true);
+    benchmark_matmul(32, 100, MatmulKind::Naive);
+    benchmark_matmul(32, 100, MatmulKind::RowMajor);
+    benchmark_matmul(32, 100, MatmulKind::Tiled);
+    benchmark_matmul(64, 30, MatmulKind::Naive);
+    benchmark_matmul(64, 30, MatmulKind::RowMajor);
+    benchmark_matmul(64, 30, MatmulKind::Tiled);
+    benchmark_matmul(128, 8, MatmulKind::Naive);
+    benchmark_matmul(128, 8, MatmulKind::RowMajor);
+    benchmark_matmul(128, 8, MatmulKind::Tiled);
+    benchmark_matmul(256, 4, MatmulKind::Naive);
+    benchmark_matmul(256, 4, MatmulKind::RowMajor);
+    benchmark_matmul(256, 4, MatmulKind::Tiled);
     benchmark_linear_forward(16, 64, 64, 100);
     benchmark_linear_backward(16, 64, 64, 30);
     benchmark_sgd_step(4096, 500);

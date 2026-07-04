@@ -202,14 +202,18 @@ Tensor::Ptr Tensor::sum() {
 }
 
 Tensor::Ptr Tensor::matmul(const Ptr& other) {
-    return matmul_impl(other, true);
+    return matmul_impl(other, MatmulKind::RowMajor);
 }
 
 Tensor::Ptr Tensor::matmul_naive(const Ptr& other) {
-    return matmul_impl(other, false);
+    return matmul_impl(other, MatmulKind::Naive);
 }
 
-Tensor::Ptr Tensor::matmul_impl(const Ptr& other, bool row_major_accumulation) {
+Tensor::Ptr Tensor::matmul_tiled(const Ptr& other) {
+    return matmul_impl(other, MatmulKind::Tiled);
+}
+
+Tensor::Ptr Tensor::matmul_impl(const Ptr& other, MatmulKind kind) {
     require_tensor(other);
 
     if (cols() != other->rows()) {
@@ -222,7 +226,8 @@ Tensor::Ptr Tensor::matmul_impl(const Ptr& other, bool row_major_accumulation) {
 
     std::vector<double> output(lhs_rows * rhs_cols, 0.0);
 
-    if (row_major_accumulation) {
+    switch (kind) {
+    case MatmulKind::RowMajor: {
         for (std::size_t row = 0; row < lhs_rows; ++row) {
             const std::size_t lhs_row_offset = row * lhs_cols;
             const std::size_t out_row_offset = row * rhs_cols;
@@ -236,7 +241,9 @@ Tensor::Ptr Tensor::matmul_impl(const Ptr& other, bool row_major_accumulation) {
                 }
             }
         }
-    } else {
+        break;
+    }
+    case MatmulKind::Naive: {
         for (std::size_t row = 0; row < lhs_rows; ++row) {
             const std::size_t lhs_row_offset = row * lhs_cols;
             const std::size_t out_row_offset = row * rhs_cols;
@@ -249,6 +256,41 @@ Tensor::Ptr Tensor::matmul_impl(const Ptr& other, bool row_major_accumulation) {
                 output[out_row_offset + col] = value;
             }
         }
+        break;
+    }
+    case MatmulKind::Tiled: {
+        constexpr std::size_t block = 32;
+        const double* const lhs_data = data_.data();
+        const double* const rhs_data = other->data_.data();
+        double* const out_data = output.data();
+
+        for (std::size_t i0 = 0; i0 < lhs_rows; i0 += block) {
+            const std::size_t i_end = std::min(i0 + block, lhs_rows);
+
+            for (std::size_t k0 = 0; k0 < lhs_cols; k0 += block) {
+                const std::size_t k_end = std::min(k0 + block, lhs_cols);
+
+                for (std::size_t j0 = 0; j0 < rhs_cols; j0 += block) {
+                    const std::size_t j_end = std::min(j0 + block, rhs_cols);
+
+                    for (std::size_t i = i0; i < i_end; ++i) {
+                        const std::size_t lhs_row_offset = i * lhs_cols;
+                        double* const out_row = out_data + (i * rhs_cols);
+
+                        for (std::size_t k = k0; k < k_end; ++k) {
+                            const double lhs_value = lhs_data[lhs_row_offset + k];
+                            const double* const rhs_row = rhs_data + (k * rhs_cols);
+
+                            for (std::size_t j = j0; j < j_end; ++j) {
+                                out_row[j] += lhs_value * rhs_row[j];
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        break;
+    }
     }
 
     auto self = shared_from_this();

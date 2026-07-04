@@ -45,8 +45,11 @@ public:
     Ptr sum();
     Ptr matmul(const Ptr& other);
     Ptr matmul_naive(const Ptr& other);
+    Ptr matmul_tiled(const Ptr& other);
 
 private:
+    enum class MatmulKind { Naive, RowMajor, Tiled };
+
     Shape shape_;
     std::vector<double> data_;
     std::vector<double> grad_;
@@ -56,7 +59,7 @@ private:
     void validate_storage() const;
     void require_same_shape(const Tensor& other) const;
     void require_row_vector_for_broadcast(const Tensor& other) const;
-    Ptr matmul_impl(const Ptr& other, bool row_major_accumulation);
+    Ptr matmul_impl(const Ptr& other, MatmulKind kind);
 
     static void require_tensor(const Ptr& tensor);
     static void build_topology(const Ptr& node,

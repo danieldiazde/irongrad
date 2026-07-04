@@ -38,7 +38,7 @@ The top-level public header is:
 - Explicit tensor mutation APIs: `set_data`, `set_grad`, `mutable_data`, `mutable_grad`
 - Elementwise add, multiply, ReLU, sum, row-vector bias addition, and row-major matrix multiplication
 - Reverse-mode automatic differentiation
-- Naive vs row-major matmul benchmark comparison
+- Naive, row-major, and cache-blocked (tiled) matmul variants with benchmark comparison
 - Numerical gradient checks for autograd validation
 - Branching/repeated-use graph tests such as `x*x + x`
 - Repeated backward tests with leaf-gradient accumulation
@@ -136,18 +136,24 @@ XOR predictions:
 IronGrad benchmark
 case                              iterations         ms/iter
 ------------------------------------------------------------
-matmul naive 32x32                       100          0.0736
-matmul row-major 32x32                   100          0.0568
-matmul naive 64x64                        30          0.4372
-matmul row-major 64x64                    30          0.4009
-matmul naive 128x128                       8          3.6832
-matmul row-major 128x128                   8          2.2650
-linear forward 16x64 -> 64               100          0.1699
-linear fwd+bwd 16x64 -> 64                30          0.5996
-sgd step 4096 params                     500          0.0274
+matmul naive 32x32                       100          0.0614
+matmul row-major 32x32                   100          0.0738
+matmul tiled 32x32                       100          0.0454
+matmul naive 64x64                        30          0.4295
+matmul row-major 64x64                    30          0.3401
+matmul tiled 64x64                        30          0.3161
+matmul naive 128x128                       8          3.4618
+matmul row-major 128x128                   8          2.2466
+matmul tiled 128x128                       8          2.9553
+matmul naive 256x256                       4         29.6973
+matmul row-major 256x256                   4         12.9161
+matmul tiled 256x256                       4         16.2061
+linear forward 16x64 -> 64               100          0.0903
+linear fwd+bwd 16x64 -> 64                30          0.2638
+sgd step 4096 params                     500          0.0240
 ```
 
-Benchmark numbers vary by machine, compiler, and current system load. They are intended for local comparison and regression spotting, not as absolute performance claims.
+Benchmark numbers vary by machine, compiler, and current system load. They are intended for local comparison and regression spotting, not as absolute performance claims. The naive variant iterates in the classic `i,j,k` order and pays for scattered RHS access. The row-major variant hoists the LHS scalar and streams contiguous RHS/output rows, which the compiler auto-vectorizes well. The tiled variant applies 32x32 cache blocking; whether it beats row-major at a given size depends on whether the full RHS still fits in L2 (row-major dominates when it does) and on how well the compiler vectorizes the shorter inner loops.
 
 ## Release Checklist
 

@@ -228,6 +228,9 @@ void test_matmul_autograd() {
     auto c_naive = a->matmul_naive(b);
     require_vector_near(c_naive->data(), c->data(), "naive matmul output");
 
+    auto c_tiled = a->matmul_tiled(b);
+    require_vector_near(c_tiled->data(), c->data(), "tiled matmul output");
+
     c->sum()->backward();
 
     require_vector_near(a->grad(), {15.0, 19.0, 23.0,
@@ -235,6 +238,31 @@ void test_matmul_autograd() {
     require_vector_near(b->grad(), {5.0, 5.0,
                                     7.0, 7.0,
                                     9.0, 9.0}, "matmul rhs gradient");
+}
+
+void test_matmul_tiled_matches_row_major_across_blocks() {
+    const std::size_t m = 48;
+    const std::size_t k = 40;
+    const std::size_t n = 56;
+
+    std::vector<double> lhs_values(m * k);
+    for (std::size_t i = 0; i < lhs_values.size(); ++i) {
+        lhs_values[i] = static_cast<double>((i * 3 + 7) % 19) / 19.0 - 0.5;
+    }
+    std::vector<double> rhs_values(k * n);
+    for (std::size_t i = 0; i < rhs_values.size(); ++i) {
+        rhs_values[i] = static_cast<double>((i * 5 + 11) % 23) / 23.0 - 0.5;
+    }
+
+    auto lhs = Tensor::create(Shape(m, k), lhs_values);
+    auto rhs = Tensor::create(Shape(k, n), rhs_values);
+
+    const auto row_major = lhs->matmul(rhs)->data();
+    const auto naive = lhs->matmul_naive(rhs)->data();
+    const auto tiled = lhs->matmul_tiled(rhs)->data();
+
+    require_vector_near(naive, row_major, 1e-10, "naive matches row-major across blocks");
+    require_vector_near(tiled, row_major, 1e-10, "tiled matches row-major across blocks");
 }
 
 void test_matmul_gradient_check() {
@@ -443,6 +471,7 @@ int main() {
         test_leaf_gradients_accumulate_across_backward_calls();
         test_repeated_backward_on_same_graph_accumulates_once_per_call();
         test_matmul_autograd();
+        test_matmul_tiled_matches_row_major_across_blocks();
         test_matmul_gradient_check();
         test_sgd_step();
         test_linear_layer_autograd();
