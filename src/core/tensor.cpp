@@ -202,48 +202,91 @@ Tensor::Ptr Tensor::sum() {
 }
 
 Tensor::Ptr Tensor::matmul(const Ptr& other) {
+    return matmul_impl(other, true);
+}
+
+Tensor::Ptr Tensor::matmul_naive(const Ptr& other) {
+    return matmul_impl(other, false);
+}
+
+Tensor::Ptr Tensor::matmul_impl(const Ptr& other, bool row_major_accumulation) {
     require_tensor(other);
 
     if (cols() != other->rows()) {
         throw std::invalid_argument("Matrix dimensions not aligned");
     }
 
-    std::vector<double> output(rows() * other->cols(), 0.0);
-    for (std::size_t row = 0; row < rows(); ++row) {
-        for (std::size_t col = 0; col < other->cols(); ++col) {
-            double value = 0.0;
-            for (std::size_t k = 0; k < cols(); ++k) {
-                value += data_[index(row, k)] * other->data_[other->index(k, col)];
+    const std::size_t lhs_rows = rows();
+    const std::size_t lhs_cols = cols();
+    const std::size_t rhs_cols = other->cols();
+
+    std::vector<double> output(lhs_rows * rhs_cols, 0.0);
+
+    if (row_major_accumulation) {
+        for (std::size_t row = 0; row < lhs_rows; ++row) {
+            const std::size_t lhs_row_offset = row * lhs_cols;
+            const std::size_t out_row_offset = row * rhs_cols;
+
+            for (std::size_t k = 0; k < lhs_cols; ++k) {
+                const double lhs_value = data_[lhs_row_offset + k];
+                const std::size_t rhs_row_offset = k * rhs_cols;
+
+                for (std::size_t col = 0; col < rhs_cols; ++col) {
+                    output[out_row_offset + col] += lhs_value * other->data_[rhs_row_offset + col];
+                }
             }
-            output[(row * other->cols()) + col] = value;
+        }
+    } else {
+        for (std::size_t row = 0; row < lhs_rows; ++row) {
+            const std::size_t lhs_row_offset = row * lhs_cols;
+            const std::size_t out_row_offset = row * rhs_cols;
+
+            for (std::size_t col = 0; col < rhs_cols; ++col) {
+                double value = 0.0;
+                for (std::size_t k = 0; k < lhs_cols; ++k) {
+                    value += data_[lhs_row_offset + k] * other->data_[(k * rhs_cols) + col];
+                }
+                output[out_row_offset + col] = value;
+            }
         }
     }
 
     auto self = shared_from_this();
     auto out = std::make_shared<Tensor>(
-        Shape(rows(), other->cols()),
+        Shape(lhs_rows, rhs_cols),
         std::move(output),
         std::vector<Ptr>{self, other}
     );
 
     out->backward_fn_ = [out, self, other]() {
-        for (std::size_t row = 0; row < self->rows(); ++row) {
-            for (std::size_t col = 0; col < self->cols(); ++col) {
+        const std::size_t lhs_rows = self->rows();
+        const std::size_t lhs_cols = self->cols();
+        const std::size_t rhs_cols = other->cols();
+
+        for (std::size_t row = 0; row < lhs_rows; ++row) {
+            const std::size_t lhs_row_offset = row * lhs_cols;
+            const std::size_t grad_row_offset = row * rhs_cols;
+
+            for (std::size_t col = 0; col < lhs_cols; ++col) {
                 double value = 0.0;
-                for (std::size_t k = 0; k < other->cols(); ++k) {
-                    value += out->grad_[out->index(row, k)] * other->data_[other->index(col, k)];
+                const std::size_t rhs_row_offset = col * rhs_cols;
+
+                for (std::size_t k = 0; k < rhs_cols; ++k) {
+                    value += out->grad_[grad_row_offset + k] * other->data_[rhs_row_offset + k];
                 }
-                self->grad_[self->index(row, col)] += value;
+                self->grad_[lhs_row_offset + col] += value;
             }
         }
 
-        for (std::size_t row = 0; row < other->rows(); ++row) {
-            for (std::size_t col = 0; col < other->cols(); ++col) {
+        for (std::size_t row = 0; row < lhs_cols; ++row) {
+            const std::size_t rhs_row_offset = row * rhs_cols;
+
+            for (std::size_t col = 0; col < rhs_cols; ++col) {
                 double value = 0.0;
-                for (std::size_t k = 0; k < self->rows(); ++k) {
-                    value += self->data_[self->index(k, row)] * out->grad_[out->index(k, col)];
+                for (std::size_t k = 0; k < lhs_rows; ++k) {
+                    value += self->data_[(k * lhs_cols) + row] * out->grad_[(k * rhs_cols) + col];
                 }
-                other->grad_[other->index(row, col)] += value;
+                other->grad_[rhs_row_offset + col] += value;
             }
         }
     };

@@ -225,6 +225,9 @@ void test_matmul_autograd() {
     auto c = a->matmul(b);
     require_vector_near(c->data(), {58.0, 64.0, 139.0, 154.0}, "matmul output");
 
+    auto c_naive = a->matmul_naive(b);
+    require_vector_near(c_naive->data(), c->data(), "naive matmul output");
+
     c->sum()->backward();
 
     require_vector_near(a->grad(), {15.0, 19.0, 23.0,

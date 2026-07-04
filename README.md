@@ -21,7 +21,7 @@ The top-level header `include/irongrad/irongrad.hpp` includes the current public
 ## Current Features
 
 - Tensor storage with shape validation
-- Elementwise add, multiply, ReLU, sum, matrix multiplication, and row-vector bias addition
+- Elementwise add, multiply, ReLU, sum, row-vector bias addition, and row-major matrix multiplication
 - Reverse-mode automatic differentiation
 - Numerical gradient checks for autograd validation
 - Optimizer base class
@@ -29,6 +29,7 @@ The top-level header `include/irongrad/irongrad.hpp` includes the current public
 - `nn::Module`, `nn::Linear`, `nn::ReLU`, and `nn::Sequential`
 - End-to-end XOR training demo
 - Lightweight C++ benchmark harness
+- Naive vs row-major matmul benchmark comparison
 
 ## Correctness
 

@@ -44,6 +44,7 @@ public:
     Ptr relu();
     Ptr sum();
     Ptr matmul(const Ptr& other);
+    Ptr matmul_naive(const Ptr& other);
 
 private:
     Shape shape_;
@@ -55,6 +56,7 @@ private:
     void validate_storage() const;
     void require_same_shape(const Tensor& other) const;
     void require_row_vector_for_broadcast(const Tensor& other) const;
+    Ptr matmul_impl(const Ptr& other, bool row_major_accumulation);
 
     static void require_tensor(const Ptr& tensor);
     static void build_topology(const Ptr& node,

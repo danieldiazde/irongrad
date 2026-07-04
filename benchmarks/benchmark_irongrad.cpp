@@ -44,17 +44,18 @@ void print_row(const std::string& name, int iterations, double ms) {
               << '\n';
 }
 
-void benchmark_matmul(std::size_t size, int iterations) {
+void benchmark_matmul(std::size_t size, int iterations, bool optimized) {
     auto lhs = Tensor::create(Shape(size, size), values(size * size));
     auto rhs = Tensor::create(Shape(size, size), values(size * size));
 
     double checksum = 0.0;
     const double ms = time_ms([&]() {
-        auto out = lhs->matmul(rhs);
+        auto out = optimized ? lhs->matmul(rhs) : lhs->matmul_naive(rhs);
         checksum += out->data()[0];
     }, iterations);
 
-    print_row("matmul " + std::to_string(size) + "x" + std::to_string(size), iterations, ms);
+    const std::string label = optimized ? "matmul row-major " : "matmul naive ";
+    print_row(label + std::to_string(size) + "x" + std::to_string(size), iterations, ms);
 
     if (checksum == -1.0) {
         std::cerr << "unreachable checksum guard\n";
@@ -134,8 +135,12 @@ int main() {
               << '\n';
     std::cout << std::string(60, '-') << '\n';
 
-    benchmark_matmul(32, 100);
-    benchmark_matmul(64, 30);
+    benchmark_matmul(32, 100, false);
+    benchmark_matmul(32, 100, true);
+    benchmark_matmul(64, 30, false);
+    benchmark_matmul(64, 30, true);
+    benchmark_matmul(128, 8, false);
+    benchmark_matmul(128, 8, true);
     benchmark_linear_forward(16, 64, 64, 100);
     benchmark_linear_backward(16, 64, 64, 30);
     benchmark_sgd_step(4096, 500);
