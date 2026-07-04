@@ -396,6 +396,41 @@ void test_sequential_model() {
     require(model.parameters().size() == 2, "sequential parameter count");
 }
 
+void test_sequential_gradient_check() {
+    const Shape input_shape(1, 2);
+    const std::vector<double> input_values = {0.75, -0.4};
+    const std::vector<double> hidden_weights = {0.6, -0.3,
+                                                0.2, 0.9};
+    const std::vector<double> hidden_bias = {0.1, -0.2};
+    const std::vector<double> output_weights = {0.5,
+                                                -0.7};
+    const std::vector<double> output_bias = {0.05};
+
+    auto scalar_forward = [&](const Tensor::Ptr& input) {
+        auto hidden = std::make_unique<Linear>(2, 2);
+        hidden->weights()->set_data(hidden_weights);
+        hidden->bias()->set_data(hidden_bias);
+
+        auto output = std::make_unique<Linear>(2, 1);
+        output->weights()->set_data(output_weights);
+        output->bias()->set_data(output_bias);
+
+        Sequential model;
+        model.add(std::move(hidden));
+        model.add(std::make_unique<ReLU>());
+        model.add(std::move(output));
+
+        return model.forward(input)->sum();
+    };
+
+    require_vector_near(
+        analytic_gradient(input_shape, input_values, scalar_forward),
+        numerical_gradient(input_shape, input_values, scalar_forward),
+        1e-5,
+        "sequential finite-difference gradient for input"
+    );
+}
+
 } // namespace
 
 int main() {
@@ -413,6 +448,7 @@ int main() {
         test_linear_layer_autograd();
         test_linear_layer_gradient_check();
         test_sequential_model();
+        test_sequential_gradient_check();
     } catch (const std::exception& error) {
         std::cerr << "Test failed: " << error.what() << '\n';
         return EXIT_FAILURE;
