@@ -27,6 +27,7 @@ The top-level header `include/irongrad/irongrad.hpp` includes the current public
 - Optimizer base class
 - SGD with momentum and optional Nesterov updates
 - `nn::Module`, `nn::Linear`, `nn::ReLU`, and `nn::Sequential`
+- End-to-end XOR training demo
 
 ## Correctness
 
@@ -39,6 +40,14 @@ The C++ test suite validates gradients in two ways:
 
 This catches incorrect backward rules and gives a baseline before adding lower-level performance optimizations.
 
+## Examples
+
+The XOR demo trains a tiny 2-layer ReLU network with IronGrad's tensor, autograd, layer, and SGD APIs:
+
+```bash
+make xor
+```
+
 ## Build Instructions
 
 Requires a C++20 compiler.
@@ -47,6 +56,7 @@ Requires a C++20 compiler.
 make build    # builds the C++ test binary
 make test     # builds and runs the C++ tests
 make sanitize # runs tests with AddressSanitizer and UndefinedBehaviorSanitizer
+make xor      # trains a tiny XOR model end-to-end
 make clean    # removes build artifacts
 make rebuild  # clean + build
 ```
