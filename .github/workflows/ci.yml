@@ -23,3 +23,6 @@ jobs:
 
       - name: Run XOR Demo
         run: make xor
+
+      - name: Run Benchmarks
+        run: make bench

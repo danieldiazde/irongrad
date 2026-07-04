@@ -28,6 +28,7 @@ The top-level header `include/irongrad/irongrad.hpp` includes the current public
 - SGD with momentum and optional Nesterov updates
 - `nn::Module`, `nn::Linear`, `nn::ReLU`, and `nn::Sequential`
 - End-to-end XOR training demo
+- Lightweight C++ benchmark harness
 
 ## Correctness
 
@@ -57,6 +58,7 @@ make build    # builds the C++ test binary
 make test     # builds and runs the C++ tests
 make sanitize # runs tests with AddressSanitizer and UndefinedBehaviorSanitizer
 make xor      # trains a tiny XOR model end-to-end
+make bench    # runs lightweight performance benchmarks
 make clean    # removes build artifacts
 make rebuild  # clean + build
 ```
