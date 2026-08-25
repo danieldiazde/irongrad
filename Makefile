@@ -1,4 +1,4 @@
-.PHONY: build test sanitize xor xor-sanitize bench clean rebuild
+.PHONY: build test sanitize xor xor-sanitize bench bench-large clean rebuild
 
 CXX ?= c++
 CXXFLAGS ?= -std=c++20 -Wall -Wextra -Wpedantic -Iinclude
@@ -50,6 +50,11 @@ bench:
 	mkdir -p $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) $(BENCH_FLAGS) $(LIB_SOURCES) $(BENCH_SOURCES) -o $(BENCH_BIN)
 	./$(BENCH_BIN)
+
+bench-large:
+	mkdir -p $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) $(BENCH_FLAGS) $(LIB_SOURCES) $(BENCH_SOURCES) -o $(BENCH_BIN)
+	IRONGRAD_BENCH_LARGE=1 ./$(BENCH_BIN)
 
 clean:
 	rm -rf $(BUILD_DIR)
