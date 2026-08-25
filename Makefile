@@ -33,7 +33,7 @@ test: build
 sanitize:
 	mkdir -p $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) $(SANITIZE_FLAGS) $(LIB_SOURCES) $(TEST_SOURCES) -o $(SANITIZE_BIN)
-	ASAN_OPTIONS=detect_leaks=0 ./$(SANITIZE_BIN)
+	./$(SANITIZE_BIN)
 
 xor:
 	mkdir -p $(BUILD_DIR)

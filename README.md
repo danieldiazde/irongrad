@@ -75,8 +75,6 @@ cmake --build build-sanitize
 ctest --test-dir build-sanitize --output-on-failure
 ```
 
-The sanitizer test disables leak detection with `ASAN_OPTIONS=detect_leaks=0` because LeakSanitizer is not reliable in some containerized environments. Address and undefined-behavior checks still run.
-
 ## Make Targets
 
 ```bash
@@ -113,7 +111,7 @@ All IronGrad C++ tests passed.
 `make sanitize`:
 
 ```text
-ASAN_OPTIONS=detect_leaks=0 ./build/irongrad_tests_sanitize
+./build/irongrad_tests_sanitize
 All IronGrad C++ tests passed.
 ```
 

@@ -215,6 +215,41 @@ void test_repeated_backward_on_same_graph_accumulates_once_per_call() {
     require_vector_near(x->grad(), {12.0}, "second backward on retained graph");
 }
 
+void test_binary_op_node_is_released_with_its_scope() {
+    auto x = tensor({2.0, -3.0});
+    auto y = tensor({1.0, 4.0});
+    std::weak_ptr<Tensor> sum_observer;
+
+    {
+        auto sum_node = x->add(y);
+        sum_observer = sum_node;
+        sum_node->sum()->backward();
+        require(!sum_observer.expired(), "add node must stay alive while the graph is held");
+    }
+
+    require(sum_observer.expired(), "add node must be released when the graph goes out of scope");
+    require_vector_near(x->grad(), {1.0, 1.0}, "add gradient before node release");
+}
+
+void test_reused_node_graph_is_released_with_its_scope() {
+    auto x = tensor({2.0, -3.0});
+    std::weak_ptr<Tensor> square_observer;
+    std::weak_ptr<Tensor> loss_observer;
+
+    {
+        auto square = x->mul(x);
+        auto loss = square->add(x)->sum();
+        square_observer = square;
+        loss_observer = loss;
+        loss->backward();
+        require(!square_observer.expired(), "reused node must stay alive while the graph is held");
+    }
+
+    require(square_observer.expired(), "reused node must be released when the graph goes out of scope");
+    require(loss_observer.expired(), "loss node must be released when the graph goes out of scope");
+    require_vector_near(x->grad(), {5.0, -5.0}, "x*x + x gradient before node release");
+}
+
 void test_matmul_autograd() {
     auto a = tensor(Shape(2, 3), {1.0, 2.0, 3.0,
                                   4.0, 5.0, 6.0});
@@ -470,6 +505,8 @@ int main() {
         test_branching_graph_gradient_check();
         test_leaf_gradients_accumulate_across_backward_calls();
         test_repeated_backward_on_same_graph_accumulates_once_per_call();
+        test_binary_op_node_is_released_with_its_scope();
+        test_reused_node_graph_is_released_with_its_scope();
         test_matmul_autograd();
         test_matmul_tiled_matches_row_major_across_blocks();
         test_matmul_gradient_check();

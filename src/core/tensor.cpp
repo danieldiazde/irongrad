@@ -110,10 +110,11 @@ Tensor::Ptr Tensor::add(const Ptr& other) {
 
     auto self = shared_from_this();
     auto out = std::make_shared<Tensor>(shape_, std::move(output), std::vector<Ptr>{self, other});
-    out->backward_fn_ = [out, self, other]() {
-        for (std::size_t i = 0; i < out->grad_.size(); ++i) {
-            self->grad_[i] += out->grad_[i];
-            other->grad_[i] += out->grad_[i];
+    Tensor* out_raw = out.get();
+    out->backward_fn_ = [out_raw, self, other]() {
+        for (std::size_t i = 0; i < out_raw->grad_.size(); ++i) {
+            self->grad_[i] += out_raw->grad_[i];
+            other->grad_[i] += out_raw->grad_[i];
         }
     };
 
@@ -133,10 +134,11 @@ Tensor::Ptr Tensor::add_row_vector(const Ptr& row_vector) {
 
     auto self = shared_from_this();
     auto out = std::make_shared<Tensor>(shape_, std::move(output), std::vector<Ptr>{self, row_vector});
-    out->backward_fn_ = [out, self, row_vector]() {
+    Tensor* out_raw = out.get();
+    out->backward_fn_ = [out_raw, self, row_vector]() {
         for (std::size_t row = 0; row < self->rows(); ++row) {
             for (std::size_t col = 0; col < self->cols(); ++col) {
-                const double upstream = out->grad_[out->index(row, col)];
+                const double upstream = out_raw->grad_[out_raw->index(row, col)];
                 self->grad_[self->index(row, col)] += upstream;
                 row_vector->grad_[col] += upstream;
             }
@@ -157,10 +159,11 @@ Tensor::Ptr Tensor::mul(const Ptr& other) {
 
     auto self = shared_from_this();
     auto out = std::make_shared<Tensor>(shape_, std::move(output), std::vector<Ptr>{self, other});
-    out->backward_fn_ = [out, self, other]() {
-        for (std::size_t i = 0; i < out->grad_.size(); ++i) {
-            self->grad_[i] += other->data_[i] * out->grad_[i];
-            other->grad_[i] += self->data_[i] * out->grad_[i];
+    Tensor* out_raw = out.get();
+    out->backward_fn_ = [out_raw, self, other]() {
+        for (std::size_t i = 0; i < out_raw->grad_.size(); ++i) {
+            self->grad_[i] += other->data_[i] * out_raw->grad_[i];
+            other->grad_[i] += self->data_[i] * out_raw->grad_[i];
         }
     };
 
@@ -175,9 +178,10 @@ Tensor::Ptr Tensor::relu() {
 
     auto self = shared_from_this();
     auto out = std::make_shared<Tensor>(shape_, std::move(output), std::vector<Ptr>{self});
-    out->backward_fn_ = [out, self]() {
-        for (std::size_t i = 0; i < out->grad_.size(); ++i) {
-            self->grad_[i] += (self->data_[i] > 0.0 ? 1.0 : 0.0) * out->grad_[i];
+    Tensor* out_raw = out.get();
+    out->backward_fn_ = [out_raw, self]() {
+        for (std::size_t i = 0; i < out_raw->grad_.size(); ++i) {
+            self->grad_[i] += (self->data_[i] > 0.0 ? 1.0 : 0.0) * out_raw->grad_[i];
         }
     };
 
@@ -192,9 +196,10 @@ Tensor::Ptr Tensor::sum() {
 
     auto self = shared_from_this();
     auto out = std::make_shared<Tensor>(Shape(1, 1), std::vector<double>{total}, std::vector<Ptr>{self});
-    out->backward_fn_ = [out, self]() {
+    Tensor* out_raw = out.get();
+    out->backward_fn_ = [out_raw, self]() {
         for (double& value : self->grad_) {
-            value += out->grad_[0];
+            value += out_raw->grad_[0];
         }
     };
 
@@ -300,7 +305,8 @@ Tensor::Ptr Tensor::matmul_impl(const Ptr& other, MatmulKind kind) {
         std::vector<Ptr>{self, other}
     );
 
-    out->backward_fn_ = [out, self, other]() {
+    Tensor* out_raw = out.get();
+    out->backward_fn_ = [out_raw, self, other]() {
         const std::size_t lhs_rows = self->rows();
         const std::size_t lhs_cols = self->cols();
         const std::size_t rhs_cols = other->cols();
@@ -314,7 +320,7 @@ Tensor::Ptr Tensor::matmul_impl(const Ptr& other, MatmulKind kind) {
                 const std::size_t rhs_row_offset = col * rhs_cols;
 
                 for (std::size_t k = 0; k < rhs_cols; ++k) {
-                    value += out->grad_[grad_row_offset + k] * other->data_[rhs_row_offset + k];
+                    value += out_raw->grad_[grad_row_offset + k] * other->data_[rhs_row_offset + k];
                 }
                 self->grad_[lhs_row_offset + col] += value;
             }
@@ -326,7 +332,7 @@ Tensor::Ptr Tensor::matmul_impl(const Ptr& other, MatmulKind kind) {
             for (std::size_t col = 0; col < rhs_cols; ++col) {
                 double value = 0.0;
                 for (std::size_t k = 0; k < lhs_rows; ++k) {
-                    value += self->data_[(k * lhs_cols) + row] * out->grad_[(k * rhs_cols) + col];
+                    value += self->data_[(k * lhs_cols) + row] * out_raw->grad_[(k * rhs_cols) + col];
                 }
                 other->grad_[rhs_row_offset + col] += value;
             }

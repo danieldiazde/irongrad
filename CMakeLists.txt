@@ -41,8 +41,4 @@ if(IRONGRAD_BUILD_TESTS)
     target_link_libraries(irongrad_tests PRIVATE irongrad)
 
     add_test(NAME irongrad_tests COMMAND irongrad_tests)
-
-    if(IRONGRAD_ENABLE_SANITIZERS)
-        set_tests_properties(irongrad_tests PROPERTIES ENVIRONMENT "ASAN_OPTIONS=detect_leaks=0")
-    endif()
 endif()
