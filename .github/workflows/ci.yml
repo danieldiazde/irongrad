@@ -24,5 +24,8 @@ jobs:
       - name: Run XOR Demo
         run: make xor
 
+      - name: Run XOR Demo Under Sanitizers
+        run: make xor-sanitize
+
       - name: Run Benchmarks
         run: make bench

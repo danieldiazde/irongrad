@@ -1,4 +1,4 @@
-.PHONY: build test sanitize xor bench clean rebuild
+.PHONY: build test sanitize xor xor-sanitize bench clean rebuild
 
 CXX ?= c++
 CXXFLAGS ?= -std=c++20 -Wall -Wextra -Wpedantic -Iinclude
@@ -7,6 +7,7 @@ BUILD_DIR := build
 TEST_BIN := $(BUILD_DIR)/irongrad_tests
 SANITIZE_BIN := $(BUILD_DIR)/irongrad_tests_sanitize
 XOR_BIN := $(BUILD_DIR)/xor_demo
+XOR_SANITIZE_BIN := $(BUILD_DIR)/xor_demo_sanitize
 BENCH_BIN := $(BUILD_DIR)/irongrad_benchmarks
 SANITIZE_FLAGS := -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined
 
@@ -39,6 +40,11 @@ xor:
 	mkdir -p $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) $(LIB_SOURCES) $(XOR_SOURCES) -o $(XOR_BIN)
 	./$(XOR_BIN)
+
+xor-sanitize:
+	mkdir -p $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) $(SANITIZE_FLAGS) $(LIB_SOURCES) $(XOR_SOURCES) -o $(XOR_SANITIZE_BIN)
+	ASAN_OPTIONS=detect_leaks=1 ./$(XOR_SANITIZE_BIN)
 
 bench:
 	mkdir -p $(BUILD_DIR)
